@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MarketRadar AI - Inscription</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body class="auth-body">
+    <div class="auth-card">
+      <div class="brand-mark large">M</div>
+      <h1>MarketRadar AI</h1>
+      <h2>Créer un compte</h2>
+
+      {% if error %}
+      <div class="alert">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="{{ url_for('signup') }}">
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" required />
+        </label>
+        <label>
+          <span>Mot de passe</span>
+          <input type="password" name="password" required />
+        </label>
+        <button type="submit" class="primary-btn">S’inscrire</button>
+      </form>
+
+      <p class="auth-link">
+        Déjà inscrit ?
+        <a href="{{ url_for('login') }}">Se connecter</a>
+      </p>
+    </div>
+  </body>
+</html>

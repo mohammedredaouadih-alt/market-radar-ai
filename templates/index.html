@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MarketRadar AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}" />
+  </head>
+  <body class="dashboard-body">
+    <div class="app-layout">
+      <aside class="app-sidebar">
+        <a class="sidebar-brand" href="{{ url_for('index') }}" aria-label="MarketRadar AI, accueil">
+          <span class="brand-symbol">M</span>
+          <span><strong>MarketRadar</strong><small>INTELLIGENCE STUDIO</small></span>
+        </a>
+
+        <div class="workspace-switcher">
+          <span class="workspace-avatar">{{ user.email[0]|upper }}</span>
+          <span class="workspace-copy"><strong>Mon espace</strong><small>{{ user.email }}</small></span>
+          <span class="switch-caret">⌄</span>
+        </div>
+
+        <p class="nav-caption">ESPACE DE TRAVAIL</p>
+        <nav class="side-nav" aria-label="Navigation principale">
+          <a class="nav-link active" href="#nouvelle-etude"><span class="nav-icon">＋</span> Nouvelle étude</a>
+          <a class="nav-link" href="#historique"><span class="nav-icon">▤</span> Mes études <span class="nav-count" id="navStudyCount">{{ studies|length }}</span></a>
+          <a class="nav-link" href="#sources"><span class="nav-icon">◎</span> Sources & méthode</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="sidebar-note"><span class="note-spark">✳</span><strong>Vos analyses, enfin structurées.</strong><p>Chaque étude reste sauvegardée dans votre espace.</p></div>
+          <a class="profile-link" href="{{ url_for('logout') }}"><span class="profile-avatar">{{ user.email[0]|upper }}</span><span><strong>{{ user.email }}</strong><small>Se déconnecter</small></span><span class="logout-mark">↗</span></a>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="main-topbar">
+          <div class="breadcrumb"><span>Workspace</span><span class="crumb-separator">/</span><strong>Vue d’ensemble</strong></div>
+          <div class="topbar-right"><span class="system-status"><i></i> Système opérationnel</span><span class="topbar-avatar">{{ user.email[0]|upper }}</span></div>
+        </header>
+
+        <div class="content-wrap">
+          <section class="welcome-row">
+            <div><p class="date-kicker">MARKET INTELLIGENCE · FRANCE</p><h1>Une meilleure lecture<br />de votre marché.</h1><p class="welcome-copy">Transformez une question stratégique en une étude claire, documentée et exploitable.</p></div>
+            <div class="welcome-stamp"><span class="stamp-top">MARKETRADAR</span><span class="stamp-mark">MR<span>↗</span></span><span class="stamp-bottom">INSIGHT, IN MOTION</span></div>
+          </section>
+
+          <section class="metric-strip" aria-label="Résumé de l’espace">
+            <div class="metric-item"><span class="metric-label">ÉTUDES CRÉÉES</span><strong id="studyTotal">{{ studies|length }}</strong><small>dans votre espace</small></div>
+            <div class="metric-item"><span class="metric-label">DERNIÈRE ACTIVITÉ</span><strong id="lastActivity">{% if studies %}{{ studies[0].created_at.strftime('%d.%m.%Y') }}{% else %}À vos côtés{% endif %}</strong><small id="activityCaption">{% if studies %}étude sauvegardée{% else %}votre première étude commence ici{% endif %}</small></div>
+            <div class="metric-item metric-prompt"><span class="metric-label">VOTRE PROCHAIN PAS</span><strong>Posez la bonne question.</strong><small>MarketRadar structure le reste avec vous.</small></div>
+          </section>
+
+          <div class="work-grid" id="nouvelle-etude">
+            <section class="study-form-panel">
+              <div class="section-heading"><div><span class="section-index">01 — BRIEF</span><h2>Votre prochaine étude</h2><p>Quelques éléments suffisent pour cadrer l’analyse.</p></div><span class="step-indicator"><span></span><span></span><span></span></span></div>
+
+              <form id="studyForm">
+                <div class="form-row">
+                  <label><span>Entreprise</span><input type="text" id="company" placeholder="Nom de l’entreprise" value="NovaGrowth" /></label>
+                  <label><span>Pays ou zone</span><input type="text" id="country" placeholder="France, Europe…" value="France" /></label>
+                </div>
+                <label><span>Marché à étudier</span><input type="text" id="market" placeholder="Ex. logiciels RH pour PME" value="IA B2B pour PME" /></label>
+                <label><span>Votre question métier</span><textarea id="question" rows="3" placeholder="Quelle décision cherchez-vous à éclairer ?">Quel est le potentiel de développement d’une solution d’IA pour améliorer la productivité des PME en France ?</textarea></label>
+                <label><span>Objectif stratégique <em>OPTIONNEL</em></span><input type="text" id="objective" placeholder="Ex. valider une offre, choisir un segment…" value="Évaluer la demande et préparer le lancement d’une offre premium pour les PME." /></label>
+                <label class="upload-field"><span>Données à analyser <em>OPTIONNEL</em></span><input type="file" id="dataFile" name="data_file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" /><small>CSV ou Excel (.xlsx), 5 Mo maximum. Les données sont transmises au fournisseur IA; retirez les informations personnelles ou confidentielles.</small></label>
+                <div class="form-footer"><span><span class="privacy-dot"></span> Transmis aux services configurés</span><button type="submit" class="primary-btn" id="analyzeButton"><span>Générer l’étude</span><span class="button-arrow">↗</span></button></div>
+              </form>
+              <p class="form-error" id="formError" role="alert"></p>
+            </section>
+
+            <aside class="recent-panel" id="historique">
+              <div class="recent-heading"><div><span class="section-index">02 — ACTIVITÉ</span><h2>Études récentes</h2></div><span class="recent-count" id="recentCount">{{ studies|length }}</span></div>
+              {% if studies %}
+              <div class="study-list" id="studyList">
+                {% for study in studies[:5] %}
+                <article class="study-row"><span class="study-type">{{ study.market[:1]|upper }}</span><div class="study-row-copy"><strong>{{ study.market }}</strong><span>{{ study.country }} · {{ study.created_at.strftime('%d.%m.%Y') }}</span></div><span class="study-arrow">↗</span></article>
+                {% endfor %}
+              </div>
+              {% else %}
+              <div class="study-list hidden" id="studyList"></div>
+              <div class="empty-state" id="emptyState"><span class="empty-orbit">＋</span><strong>Votre espace est prêt.</strong><p>Votre première analyse apparaîtra ici dès qu’elle sera générée.</p></div>
+              {% endif %}
+              <div class="method-card" id="sources"><span class="method-label">NOTRE APPROCHE</span><div class="method-steps"><span>Question</span><i></i><span>Analyse</span><i></i><span>Décision</span></div><p>Une trame structurée, des pistes à vérifier, et vos sources à portée de main.</p></div>
+            </aside>
+          </div>
+
+          <section id="results" class="results-panel hidden" aria-live="polite">
+            <div class="report-heading"><div><span class="section-index">03 — VOTRE RAPPORT</span><h2 id="reportTitle">Étude de marché</h2><p class="report-meta" id="reportMeta">Analyse générée pour votre brief</p></div><span class="report-status" id="reportStatus">ANALYSE PRÊTE</span></div>
+            <section class="reliability-card" aria-labelledby="reliabilityTitle">
+              <div class="reliability-score"><strong id="reliabilityScore">—</strong><span>/ 100</span></div>
+              <div class="reliability-copy"><div><span class="summary-label">FIABILITÉ INDICATIVE</span><h3 id="reliabilityTitle">Couverture des données</h3></div><ul id="reliabilityFactors"></ul><p id="reliabilityDisclaimer"></p></div>
+            </section>
+            <div class="report-summary"><span class="summary-label">SYNTHÈSE EXÉCUTIVE</span><p id="executiveSummary"></p></div>
+            <div class="report-section"><div class="report-section-title"><span>01</span><h3>Indicateurs de marché</h3></div><div class="insights-grid" id="insightsGrid"></div></div>
+            <div class="report-two-col"><div class="report-section"><div class="report-section-title"><span>02</span><h3>Constats clés</h3></div><ul id="keyFindings" class="report-list"></ul></div><div class="report-section"><div class="report-section-title"><span>03</span><h3>Recommandations</h3></div><ul id="recommendations" class="report-list recommendations-list"></ul></div></div>
+            <section class="evidence-section" aria-labelledby="evidenceHeading">
+              <div class="report-section-title"><span>04</span><h3 id="evidenceHeading">Evidence Score · solidité des preuves</h3></div>
+              <p id="evidenceSearchStatus" class="evidence-method-note"></p>
+              <p class="evidence-method-note">Méthode initiale à tester et calibrer, non scientifiquement validée. Les résultats proviennent de Tavily; l’IA évalue leur pertinence et leur position à partir des extraits. Vérifiez les pages, les dates et les citations avant toute décision.</p>
+              <div id="evidenceAssessments" class="evidence-assessments"></div>
+              <form id="evidenceForm" class="evidence-form">
+                <h4>Documenter une source pour un constat</h4>
+                <label><span>Constat concerné</span><select id="evidenceFinding" required></select></label>
+                <div class="form-row">
+                  <label><span>Titre du document</span><input id="evidenceTitle" type="text" maxlength="300" required /></label>
+                  <label><span>URL de la source</span><input id="evidenceUrl" type="url" placeholder="https://…" required /></label>
+                </div>
+                <div class="form-row">
+                  <label><span>Type de source</span><select id="evidenceSourceType" required>
+                    <option value="government">Organisme / statistique public</option><option value="academic">Publication académique évaluée par les pairs</option><option value="international_organization">Organisation internationale</option><option value="industry_report">Étude sectorielle</option><option value="company_primary">Donnée primaire d’entreprise</option><option value="news">Presse</option><option value="other">Autre</option>
+                  </select></label>
+                  <label><span>Date de publication / mise à jour <em>OPTIONNELLE</em></span><input id="evidenceDate" type="date" /></label>
+                </div>
+                <div class="form-row">
+                  <label><span>Origine indépendante</span><input id="evidenceOrigin" type="text" maxlength="300" placeholder="Organisme ou étude d’origine" required /><small>Identifiant commun aux articles qui reprennent la même source originale.</small></label>
+                  <label><span>Type de donnée</span><select id="evidenceDataType" required>
+                    <option value="price">Prix (validité 7 jours)</option><option value="market_trend">Tendance de marché (90 jours)</option><option value="financial">Donnée financière (365 jours)</option><option value="population">Donnée démographique (1 095 jours)</option><option value="historical">Donnée historique (10 ans)</option><option value="general">Autre donnée (180 jours)</option>
+                  </select></label>
+                </div>
+                <div class="form-row evidence-form-bottom">
+                  <label><span>Position par rapport au constat</span><select id="evidencePosition" required><option value="supports">Confirme</option><option value="contradicts">Contredit</option><option value="neutral">Ne tranche pas</option></select></label>
+                  <label class="evidence-check"><input id="evidenceMethodology" type="checkbox" /><span>Méthodologie transparente et documentée</span></label>
+                </div>
+                <p id="evidenceFormError" class="form-error" role="alert"></p>
+                <button type="submit" class="primary-btn" id="addEvidenceButton"><span>Ajouter la source et recalculer</span><span class="button-arrow">↗</span></button>
+              </form>
+            </section>
+            <div class="report-section"><div class="report-section-title"><span>04</span><h3>Plan d’étude</h3></div><div id="studyPlan" class="plan-list"></div></div>
+            <div class="report-section"><div class="report-section-title"><span>05</span><h3>Sources Web citées</h3></div><ul id="sourcesList" class="source-list"></ul><p class="source-disclaimer">Seules les sources réellement retournées par la recherche Web sont listées. Ouvrez-les et vérifiez leur contenu avant toute décision.</p></div>
+          </section>
+
+          <footer class="main-footer"><span>MARKETRADAR AI</span><span>Décider avec plus de clarté.</span></footer>
+        </div>
+      </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
